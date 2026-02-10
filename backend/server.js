@@ -144,18 +144,6 @@ app.post('/webhook', async (req, res) => {
 
         console.log(`Processing Tool Call: ${toolName}`, args);
 
-        if (toolName === 'register_pilot') {
-            order.transcript.push({
-                role: 'system',
-                content: `Pilot identified as ${args.pilot_name || 'Robin Hood'} (${args.tail_number || 'N555RH'})`,
-                timestamp: new Date()
-            });
-            broadcastUpdate(order);
-            return res.json({
-                result: `Pilot ${args.pilot_name || 'Robin Hood'} with tail number ${args.tail_number || 'N555RH'} has been found in our system. Ask the pilot if they need any services such as refueling, catering, wine selection, or ground transport.`
-            });
-        }
-
         if (toolName === 'escalate_call') {
             order.transcript.push({
                 role: 'system',
@@ -222,12 +210,17 @@ app.post('/webhook', async (req, res) => {
                 - "Arranged wine", "Confirmed drinks" -> "wine" (Finalize).
                 
                 CRITICAL RULES:
-                - If multiple services are mentioned, return multiple objects.
-                - Do NOT mix details. "Arrival at 9am" -> "reservation". "Toyota Camry" -> "transport".
-                - If the agent asks a question about a service (e.g., "regarding the rental car"), that is NOT a finalize. Only return generic "search" or nothing for that part. Confirmations must be explicit ("Confirmed", "Arranged").
-                - Action: "finalize" (only for explicit confirmations)
+                - If multiple services are mentioned, return multiple objects. "chicken sandwich and red wine" = TWO services: catering + wine. ALWAYS return BOTH.
+                - Do NOT mix details. "Arrival at 9am" -> "reservation". "Toyota Camry" -> "transport". "red wine" -> "wine" (NOT catering).
+                - ALWAYS separate food items (catering) from wine/alcohol items (wine). They are DIFFERENT services. Never group wine under catering.
+                - A single message can contain MULTIPLE intents. "Confirmed arrival... also arranged chicken sandwich and red wine" = reservation(finalize) + catering(finalize) + wine(finalize).
+                - If the agent asks a question about a service (e.g., "regarding the rental car"), that is NOT a finalize. Only return generic "search" or nothing for that part. Confirmations must be explicit ("Confirmed", "Arranged", "placed", "booked").
+                - UPSELL RULE: If the agent mentions a PAST order ("Last time you ordered...") or asks "Would you like to order the same?", do NOT return ANY intent (no search, no finalize) for catering or wine. Return EMPTY for those. BUT you MUST STILL return reservation(finalize) if the same message also says "booked arrival" or "confirmed arrival".
+                  EXAMPLE: "Confirmed. I have booked your arrival for 4 hours. Last time you ordered a chicken sandwich and red wine. Would you like to order the same again?" => RETURN: [{"type":"reservation","action":"finalize","details":"arrival booked for 4 hours"}] (catering/wine are EXCLUDED because of upsell).
+                - DECLINE RULE: If the USER says "No", "I don't want", "No thanks", or declines a service, return action: "cancel" for that service type.
+                - Action: "finalize" (only for explicit confirmations of current requests)
                 
-                Return JSON: { "services": [ { "type": "transport", "action": "search"|"finalize", "details": "optional summary" } ] }
+                Return JSON: { "services": [ { "type": "transport", "action": "search"|"finalize"|"cancel", "details": "optional summary" } ] }
                 If no clear intent, return { "services": [] }.`
                         },
                         { role: "user", content: `Context:\n${recentContext}\n\nCurrent Message to Analyze:\nSpeaker: ${role.toUpperCase()}\nMessage: "${message}"` }
@@ -249,7 +242,14 @@ app.post('/webhook', async (req, res) => {
 
                     if (validAgents.includes(agentId)) {
                         const existing = order.triggeredAgents.find(a => a.id === agentId);
-                        if (intent.action === 'search') {
+                        if (intent.action === 'cancel') {
+                            // Remove the agent if user declined
+                            if (existing) {
+                                console.log(`CANCELLING agent: ${agentId}`);
+                                order.triggeredAgents = order.triggeredAgents.filter(a => a.id !== agentId);
+                                broadcastUpdate(order);
+                            }
+                        } else if (intent.action === 'search') {
                             if (!existing) {
                                 console.log(`Triggering SEARCH for: ${agentId}`);
                                 order.triggeredAgents.push({
