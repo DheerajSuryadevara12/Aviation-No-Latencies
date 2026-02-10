@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Orbitron:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Futuristic Aviation Operations Design System
+   Deep navy, cyan accents, pristine white, holographic touches
+   Premium enterprise-grade with subtle sci-fi aesthetics */
+
+@layer base {
+  :root {
+    /* Core Futuristic Palette */
+    --background: 220 30% 96%;
+    --foreground: 220 50% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 50% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 50% 10%;
+
+    /* Deep Navy Primary with cyan undertone */
+    --primary: 215 60% 18%;
+    --primary-foreground: 180 100% 95%;
+
+    /* Cyan-Silver Secondary */
+    --secondary: 200 25% 92%;
+    --secondary-foreground: 220 50% 10%;
+
+    /* Cool Silver Muted */
+    --muted: 210 25% 95%;
+    --muted-foreground: 215 15% 45%;
+
+    /* Cyan Accent */
+    --accent: 185 70% 45%;
+    --accent-foreground: 220 50% 10%;
+
+    /* Status Colors - Refined */
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 160 65% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 95% 52%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 195 85% 50%;
+    --info-foreground: 0 0% 100%;
+
+    /* Agent Status Colors */
+    --agent-pending: 215 15% 50%;
+    --agent-progress: 35 85% 55%;
+    --agent-success: 160 65% 42%;
+    --agent-failed: 0 70% 50%;
+
+    --border: 210 25% 88%;
+    --input: 210 25% 88%;
+    --ring: 185 70% 45%;
+
+    --radius: 0.625rem;
+
+    /* Futuristic tokens */
+    --panel-glass: 0 0% 100% / 0.92;
+    --panel-border: 200 30% 85%;
+    --status-glow: 185 70% 45% / 0.35;
+    
+    /* Futuristic Gradients */
+    --gradient-navy: linear-gradient(135deg, hsl(215 60% 12%) 0%, hsl(220 65% 8%) 100%);
+    --gradient-cyan: linear-gradient(135deg, hsl(185 70% 50%) 0%, hsl(195 80% 40%) 100%);
+    --gradient-holographic: linear-gradient(135deg, hsl(200 30% 97%) 0%, hsl(185 40% 94%) 50%, hsl(210 30% 96%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(200 30% 98%) 100%);
+
+    /* Futuristic Shadows */
+    --shadow-card: 0 2px 12px hsl(215 50% 15% / 0.06), 0 8px 24px hsl(215 50% 15% / 0.04);
+    --shadow-elevated: 0 8px 32px hsl(215 50% 15% / 0.08), 0 16px 48px hsl(215 50% 15% / 0.06);
+    --shadow-glow: 0 0 30px hsl(185 70% 45% / 0.2);
+    --shadow-cyan: 0 4px 24px hsl(185 70% 45% / 0.25);
+
+    /* Sidebar */
+    --sidebar-background: 215 60% 8%;
+    --sidebar-foreground: 180 100% 95%;
+    --sidebar-primary: 180 100% 95%;
+    --sidebar-primary-foreground: 215 60% 10%;
+    --sidebar-accent: 215 60% 14%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 215 50% 16%;
+    --sidebar-ring: 185 70% 45%;
+  }
+
+  .dark {
+    --background: 220 55% 6%;
+    --foreground: 195 40% 96%;
+
+    --card: 215 55% 10%;
+    --card-foreground: 195 40% 96%;
+
+    --popover: 215 55% 10%;
+    --popover-foreground: 195 40% 96%;
+
+    --primary: 195 40% 96%;
+    --primary-foreground: 215 55% 10%;
+
+    --secondary: 215 50% 14%;
+    --secondary-foreground: 195 40% 96%;
+
+    --muted: 215 50% 14%;
+    --muted-foreground: 200 15% 60%;
+
+    --accent: 215 50% 18%;
+    --accent-foreground: 195 40% 96%;
+
+    --destructive: 0 60% 35%;
+    --destructive-foreground: 195 40% 96%;
+
+    --border: 215 50% 18%;
+    --input: 215 50% 18%;
+    --ring: 185 70% 45%;
+
+    --panel-glass: 215 55% 10% / 0.92;
+    --panel-border: 215 50% 22%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Mono font for data/codes */
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Futuristic Panel Styles */
+  .aviation-panel {
+    @apply bg-card rounded-xl border border-border;
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(200 30% 99%) 100%);
+    box-shadow: var(--shadow-card);
+    position: relative;
+  }
+
+  .aviation-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, hsl(185 70% 55% / 0.3) 50%, transparent 100%);
+    border-radius: 0.75rem 0.75rem 0 0;
+  }
+
+  .aviation-panel-elevated {
+    @apply bg-card rounded-xl border border-border;
+    background: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(200 30% 98%) 100%);
+    box-shadow: var(--shadow-elevated);
+  }
+
+  /* Futuristic Glass Effect */
+  .glass-panel {
+    @apply backdrop-blur-xl bg-white/85 rounded-xl border border-white/50;
+    box-shadow: var(--shadow-elevated), inset 0 1px 0 hsl(185 70% 80% / 0.2);
+  }
+
+  /* Cyan Accent Border */
+  .cyan-accent {
+    border-image: linear-gradient(135deg, hsl(185 70% 50%), hsl(195 80% 40%)) 1;
+  }
+
+  /* Status Indicator Animations */
+  .status-pulse {
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes statusPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.97); }
+  }
+
+  /* Futuristic Progress Bar Animation */
+  .progress-animate {
+    animation: progressShimmer 1.8s ease-in-out infinite;
+    background: linear-gradient(90deg, 
+      hsl(185 70% 50%) 0%, 
+      hsl(195 85% 60%) 50%, 
+      hsl(185 70% 50%) 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  @keyframes progressShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Cyan Glow Effect for Active Items */
+  .active-glow {
+    box-shadow: 0 0 0 1px hsl(185 70% 50% / 0.25),
+                0 0 25px hsl(185 70% 50% / 0.15),
+                0 8px 24px hsl(215 50% 15% / 0.08);
+  }
+
+  /* Alert Banner */
+  .alert-banner-critical {
+    @apply bg-destructive/5 border-destructive/25 text-destructive;
+    box-shadow: 0 0 20px hsl(0 70% 50% / 0.12);
+  }
+
+  /* Futuristic Order Card Hover */
+  .order-card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .order-card-hover:hover {
+    @apply border-accent/50;
+    box-shadow: var(--shadow-elevated), 0 0 25px hsl(185 70% 50% / 0.1);
+    transform: translateY(-3px);
+  }
+
+  /* Futuristic Agent Card */
+  .agent-card {
+    @apply bg-gradient-to-br from-muted/40 to-muted/15 rounded-lg p-4 border border-border;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .agent-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(185 70% 95% / 0.3));
+    pointer-events: none;
+  }
+
+  .agent-card-active {
+    @apply border-cyan-400/40;
+    background: linear-gradient(135deg, hsl(185 50% 98%) 0%, hsl(195 40% 96%) 100%);
+    box-shadow: 0 0 25px hsl(185 70% 50% / 0.12);
+  }
+
+  .agent-card-success {
+    @apply border-emerald-400/40;
+    background: linear-gradient(135deg, hsl(160 45% 97%) 0%, hsl(165 35% 95%) 100%);
+    box-shadow: 0 0 20px hsl(160 65% 42% / 0.1);
+  }
+
+  .agent-card-failed {
+    @apply border-red-400/40;
+    background: linear-gradient(135deg, hsl(0 50% 98%) 0%, hsl(5 40% 96%) 100%);
+    box-shadow: 0 0 20px hsl(0 70% 50% / 0.1);
+  }
+
+  /* Futuristic Navigation Header */
+  .nav-header {
+    background: var(--gradient-navy);
+    @apply text-primary-foreground;
+    box-shadow: 0 4px 24px hsl(215 50% 10% / 0.2);
+    position: relative;
+  }
+
+  .nav-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, hsl(185 70% 50% / 0.5) 50%, transparent 100%);
+  }
+
+  /* Elegant Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-accent/20 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent/35;
+  }
+
+  /* Display Font - Futuristic */
+  .font-display {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.02em;
+  }
+
+  /* Scan Line Effect */
+  .scan-line {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scan-line::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsl(185 70% 70% / 0.08), transparent);
+    animation: scanLine 3s ease-in-out infinite;
+  }
+
+  @keyframes scanLine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+}
+
+@layer utilities {
+  /* Status Colors */
+  .text-success { color: hsl(var(--success)); }
+  .text-warning { color: hsl(var(--warning)); }
+  .text-info { color: hsl(var(--info)); }
+  .bg-success { background-color: hsl(var(--success)); }
+  .bg-warning { background-color: hsl(var(--warning)); }
+  .bg-info { background-color: hsl(var(--info)); }
+  .border-success { border-color: hsl(var(--success)); }
+  .border-warning { border-color: hsl(var(--warning)); }
+  .border-info { border-color: hsl(var(--info)); }
+
+  /* Fade in animation */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Pulse soft animation for status indicators */
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseSoft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+}
