@@ -144,16 +144,7 @@ app.post('/webhook', async (req, res) => {
 
         console.log(`Processing Tool Call: ${toolName}`, args);
 
-        if (toolName === 'escalate_call') {
-            order.transcript.push({
-                role: 'system',
-                content: `Call escalated: ${args.reason}`,
-                timestamp: new Date(),
-                isError: true
-            });
-            broadcastUpdate(order);
-            return res.json({ result: "I'm transferring you to our duty manager now. Please hold." });
-        }
+        // escalate_call is now handled via transcript analysis (no separate tool needed)
 
         // add_service tool logic (Deprecated/Fallback)
         if (toolName === 'add_service') {
@@ -201,6 +192,13 @@ app.post('/webhook', async (req, res) => {
                 - "Wine", "Alcohol", "Drink" -> "wine" (Search).
                 - Action: "search"
                 
+                EMERGENCY DETECTION (HIGHEST PRIORITY):
+                - If the USER mentions: "engine failure", "emergency", "mayday", "fire", "fuel leak", "medical", "bird strike", "landing gear", or any safety-critical situation:
+                  Return: { "services": [{ "type": "urgent", "action": "finalize", "details": "[brief description of the emergency]" }] }
+                - If the AGENT says "escalating", "transferring to duty manager", or "emergency":
+                  Return: { "services": [{ "type": "urgent", "action": "finalize", "details": "[brief description]" }] }
+                - URGENT overrides ALL other intents. If emergency detected, return ONLY the urgent service.
+
                 If Speaker is AGENT (GSS):
                 - Detect if they are CONFIRMING/FINALIZING a service.
                 - "Booked arrival", "Confirmed landing", "Marked arrival" -> "reservation" (Finalize).
@@ -238,7 +236,15 @@ app.post('/webhook', async (req, res) => {
                 detectedServices.forEach(intent => {
                     const serviceType = intent.type;
                     const agentId = agentTypeMap[serviceType] || serviceType;
-                    const validAgents = ['car_rental', 'refueling', 'catering', 'wine', 'reservation'];
+                    const validAgents = ['car_rental', 'refueling', 'catering', 'wine', 'reservation', 'urgent'];
+
+                    if (agentId === 'urgent') {
+                        // Emergency: Replace ALL agents with urgent
+                        console.log(`🚨 EMERGENCY DETECTED: ${intent.details}`);
+                        order.triggeredAgents = [{ id: 'urgent', details: intent.details || 'Emergency', action: 'finalize' }];
+                        broadcastUpdate(order);
+                        return;
+                    }
 
                     if (validAgents.includes(agentId)) {
                         const existing = order.triggeredAgents.find(a => a.id === agentId);
