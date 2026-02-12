@@ -201,11 +201,13 @@ app.post('/webhook', async (req, res) => {
 
                 If Speaker is AGENT (GSS):
                 - Detect if they are CONFIRMING/FINALIZING a service.
-                - "Booked arrival", "Confirmed landing", "Marked arrival" -> "reservation" (Finalize).
-                - "Arranged car", "Confirmed rental", "Booked vehicle" -> "transport" (Finalize).
+                - "Booked arrival", "booked your arrival", "Confirmed landing", "Marked arrival", "I have booked your arrival" -> "reservation" (Finalize).
+                - "Arranged car", "Confirmed rental", "Booked vehicle", "arranged a" + car model -> "transport" (Finalize).
                 - "Arranged fuel", "Confirmed refueling" -> "refueling" (Finalize).
                 - "Arranged catering", "Confirmed food", "Meals" -> "catering" (Finalize).
                 - "Arranged wine", "Confirmed drinks" -> "wine" (Finalize).
+                - AGENT QUESTION RULE: If the agent ASKS about a service or SUGGESTS services (e.g., "such as fuel or transportation?", "Is there any specific service you would like to request?"), do NOT return any NEW intent for the question part. BUT if the SAME message ALSO contains a confirmation (e.g., "I have booked your arrival"), you MUST STILL return the finalize for that confirmation. The question does NOT cancel the confirmation.
+                  EXAMPLE: "Confirmed. I have booked your arrival for two hours from now. Is there any specific service you would like to request?" => RETURN: [{"type":"reservation","action":"finalize","details":"arrival booked for two hours"}] (the question is IGNORED, the booking is FINALIZED).
                 
                 CRITICAL RULES:
                 - If multiple services are mentioned, return multiple objects. "chicken sandwich and red wine" = TWO services: catering + wine. ALWAYS return BOTH.
@@ -215,6 +217,8 @@ app.post('/webhook', async (req, res) => {
                 - If the agent asks a question about a service (e.g., "regarding the rental car"), that is NOT a finalize. Only return generic "search" or nothing for that part. Confirmations must be explicit ("Confirmed", "Arranged", "placed", "booked").
                 - UPSELL RULE: If the agent mentions a PAST order ("Last time you ordered...") or asks "Would you like to order the same?", do NOT return ANY intent (no search, no finalize) for catering or wine. Return EMPTY for those. BUT you MUST STILL return reservation(finalize) if the same message also says "booked arrival" or "confirmed arrival".
                   EXAMPLE: "Confirmed. I have booked your arrival for 4 hours. Last time you ordered a chicken sandwich and red wine. Would you like to order the same again?" => RETURN: [{"type":"reservation","action":"finalize","details":"arrival booked for 4 hours"}] (catering/wine are EXCLUDED because of upsell).
+                - ACTIVE RESERVATION RULE: If the agent says "found your active reservation" or "already have" + food item + "on order" or "Would you like to add more services to this reservation?", return action: "cancel" for reservation AND catering. These are EXISTING services, not new ones.
+                  EXAMPLE: "Welcome! I found your active reservation. Tail PQR123, landing tomorrow at 2:00 PM. I see you already have a chicken sandwich on order." => RETURN: [{"type":"reservation","action":"cancel"},{"type":"catering","action":"cancel"}]
                 - DECLINE RULE: If the USER says "No", "I don't want", "No thanks", or declines a service, return action: "cancel" for that service type.
                 - Action: "finalize" (only for explicit confirmations of current requests)
                 
@@ -231,9 +235,24 @@ app.post('/webhook', async (req, res) => {
                 const detectedServices = result.services || [];
                 console.log(`OpenAI parsed (${role}): ${JSON.stringify(detectedServices)}`);
 
+                // Check if this is an active reservation pilot (PQR123)
+                const allMessages = order.transcript.map(t => (t.message || '').toLowerCase()).join(' ');
+                const isActiveReservation = /pqr\s*[-.]?\s*1\s*2\s*3/i.test(allMessages) || allMessages.includes('found your active reservation');
+
+                // If active reservation, suppress reservation and catering triggers (they already exist)
+                const filteredServices = isActiveReservation
+                    ? detectedServices.filter(s => s.type !== 'reservation' && s.type !== 'catering')
+                    : detectedServices;
+
+                // Also cancel any existing reservation/catering agents if active reservation detected
+                if (isActiveReservation && order.triggeredAgents.some(a => a.id === 'reservation' || a.id === 'catering')) {
+                    order.triggeredAgents = order.triggeredAgents.filter(a => a.id !== 'reservation' && a.id !== 'catering');
+                    broadcastUpdate(order);
+                }
+
                 const agentTypeMap = { 'transport': 'car_rental' };
 
-                detectedServices.forEach(intent => {
+                filteredServices.forEach(intent => {
                     const serviceType = intent.type;
                     const agentId = agentTypeMap[serviceType] || serviceType;
                     const validAgents = ['car_rental', 'refueling', 'catering', 'wine', 'reservation', 'urgent'];
