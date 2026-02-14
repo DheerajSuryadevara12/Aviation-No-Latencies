@@ -23,15 +23,18 @@ export function Dashboard() {
   });
 
   // Fetch initial live orders
+  // Fetch initial live orders
   useEffect(() => {
-    fetch(API_URL)
+    // Reset orders on load to ensure clean state
+    fetch(`${API_URL}/reset`, { method: 'POST' })
+      .then(() => fetch(API_URL))
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setLiveOrders(data.map(parseOrderDates));
         }
       })
-      .catch(err => console.error('Failed to fetch orders:', err));
+      .catch(err => console.error('Failed to reset/fetch orders:', err));
 
     // Listen for new live orders via WS
     const ws = new WebSocket(WS_URL);
@@ -51,6 +54,10 @@ export function Dashboard() {
             }
             return prev;
           });
+        } else if (data.type === 'RESET_ORDERS') {
+          console.log('WS: Received RESET_ORDERS');
+          setLiveOrders([]);
+          setSelectedOrder(null);
         }
       } catch (e) {
         console.error('WS Parse Error', e);

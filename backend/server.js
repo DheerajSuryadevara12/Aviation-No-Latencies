@@ -127,6 +127,18 @@ app.get('/api/orders', (req, res) => {
     res.json(liveOrders);
 });
 
+app.post('/api/orders/reset', (req, res) => {
+    liveOrders = [];
+    console.log('Reset active orders requested by client.');
+    // Broadcast reset to all clients to clear their specific views
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ type: 'RESET_ORDERS' }));
+        }
+    });
+    res.json({ success: true });
+});
+
 app.post('/webhook', async (req, res) => {
     const payload = req.body;
     console.log('Received webhook:', JSON.stringify(payload, null, 2));
