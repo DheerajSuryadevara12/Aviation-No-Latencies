@@ -14,6 +14,7 @@ const port = 3001;
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const server = app.listen(port, () => {
     console.log(`Backend server listening on port ${port}`);
@@ -23,6 +24,7 @@ const wss = new WebSocket.Server({ server });
 
 // Store live orders in memory
 let liveOrders = [];
+let pendingCallerPhone = null; // Stores phone from Twilio callback until order is created
 
 // HARDCODED PILOT PROFILE FOR DEMO
 const ROBIN_HOOD_PROFILE = {
@@ -35,6 +37,66 @@ const ROBIN_HOOD_PROFILE = {
         planeNumber: 'N555RH'
     }
 };
+
+// Known pilot lookup by phone number (ANI)
+const KNOWN_PILOTS = {
+    '+19405953588': 'Shane',
+    '+12144573993': 'Peter',
+    '+12408543253': 'Rohan',
+};
+
+// Aircraft lookup by tail number
+const AIRCRAFT_LOOKUP = {
+    'N945TR': 'Lear-Jet 45',
+    'N917S': 'Dassault-Falcon 2000',
+    'N904LO': 'Embraer-Embraer ERJ-135',
+    'N877GS': 'Cirrus-SR-20',
+    'N874I': 'Gulfstream-IV',
+    'N872WQ': 'Cirrus-SR-20',
+    'N817SU': 'Raytheon-Hawker-800XP',
+    'N809TZ': 'Embraer-Embraer Legacy',
+    'N800KY': 'Dassault-Falcon 900',
+    'N763DO': 'Gulfstream-IV',
+    'N712AQ': 'Embraer-Embraer ERJ-135',
+    'N619GM': 'Gulfstream-V',
+    'N579RR': 'Dassault-Falcon 900EX',
+    'N560CH': 'Cessna Citation-V',
+    'N555LK': 'Lear-Jet 45',
+    'N521WR': 'Cirrus-SR-20',
+    'N457DS': 'Bombardier-Global 5000',
+    'N399FJ': 'Embraer-Embraer ERJ-135',
+    'N358RN': 'Rockwell Twins Commander-500',
+    'N315TQ': 'Boeing-737-BBJ',
+    'N314TI': 'Gulfstream-V',
+    'N311LE': 'Cirrus-SR-20',
+    'N270SP': 'Gulfstream-IV',
+    'N242GV': 'Gulfstream-G550',
+    'N222LL': 'Gulfstream-V',
+    'N220A': 'Lear-Jet 60',
+    'N204RW': 'Cirrus-SR-20',
+    'N165JJ': 'Lear-Jet 45',
+    'N1643H': 'Embraer-Embraer ERJ-135',
+};
+
+// Detect tail number from a message and update the order
+function detectTailNumber(message, order) {
+    // Match FAA-style tail numbers: N followed by 1-5 alphanumeric chars
+    const tailMatch = message.match(/\b(N\d{1,5}[A-Z]{0,2})\b/i);
+    if (tailMatch) {
+        const tailNumber = tailMatch[1].toUpperCase();
+        const aircraftType = AIRCRAFT_LOOKUP[tailNumber] || '';
+
+        if (order.customer) {
+            order.customer.planeNumber = tailNumber;
+        }
+        order.aircraftType = aircraftType;
+        order.updatedAt = new Date();
+        console.log(`Detected tail number: ${tailNumber} → Aircraft: ${aircraftType || 'Unknown'}`);
+        broadcastUpdate(order);
+        return true;
+    }
+    return false;
+}
 
 // Cleanup stale orders every 2 seconds
 setInterval(() => {
@@ -95,7 +157,9 @@ function broadcastTranscript(orderId, role, message, triggeredAgents) {
     });
 }
 
-function getOrCreateActiveOrder() {
+function getOrCreateActiveOrder(callerPhone) {
+    // Use explicit callerPhone, or fall back to pending Twilio phone
+    const phone = callerPhone || pendingCallerPhone;
     // For demo: Always return the single active order if it exists and is recent (last 5 mins)
     // Otherwise create a new one.
     let order = liveOrders.find(o => o.status === 'processing');
@@ -103,25 +167,68 @@ function getOrCreateActiveOrder() {
     if (!order) {
         const now = new Date();
         const newId = 'live-order-' + Date.now();
+        // Always use real data for live orders — no mock fallback
+        const pilotName = phone ? (KNOWN_PILOTS[phone] || '') : '';
+        const customerProfile = {
+            customerId: 'cust-' + Date.now(),
+            customer: {
+                id: 'cust-' + Date.now(),
+                name: pilotName || 'Unknown Caller',
+                phone: phone || '',
+                pilotName: pilotName,
+                planeNumber: ''
+            }
+        };
+
+        // Clear pending phone once used
+        if (pendingCallerPhone) pendingCallerPhone = null;
+
         order = {
             id: newId,
-            ...ROBIN_HOOD_PROFILE, // ALWAYS USE ROBIN HOOD
+            ...customerProfile,
             status: 'processing',
             arrivalTime: new Date(now.getTime() + 2 * 60 * 60 * 1000), // +2 hours
-            passengers: 4,
+            passengers: 0,
             items: [],
             triggeredAgents: [],
             transcript: [],
             createdAt: now,
             updatedAt: now,
-            isIdentifying: false // Since we hardcode Robin Hood, we skip "identifying" state
+            isIdentifying: false
         };
         liveOrders.push(order);
-        console.log('Created new live order for Robin Hood:', newId);
+        console.log('Created new live order:', newId, callerPhone ? `for ${callerPhone}` : 'for Robin Hood');
         broadcastNewOrder(order);
     }
     return order;
 }
+
+// Twilio Status Callback — captures caller phone number before ElevenLabs webhooks arrive
+app.post('/twilio-call-start', (req, res) => {
+    const callerPhone = req.body.From || req.body.Caller;
+    const callSid = req.body.CallSid;
+    console.log(`Twilio call started — From: ${callerPhone}, CallSid: ${callSid}`);
+
+    if (callerPhone) {
+        pendingCallerPhone = callerPhone;
+        console.log(`Stored pending caller phone: ${callerPhone}`);
+
+        // If an active order already exists (ElevenLabs webhook arrived first), update it
+        const existingOrder = liveOrders.find(o => o.status === 'processing');
+        const pilotName = KNOWN_PILOTS[callerPhone] || '';
+        if (existingOrder && existingOrder.customer) {
+            existingOrder.customer.phone = callerPhone;
+            existingOrder.customer.name = pilotName || 'Unknown Caller';
+            existingOrder.customer.pilotName = pilotName;
+            existingOrder.updatedAt = new Date();
+            console.log(`Updated existing order ${existingOrder.id} with phone: ${callerPhone}, pilot: ${pilotName || 'Unknown'}`);
+            broadcastUpdate(existingOrder);
+        }
+    }
+
+    // Twilio expects a TwiML or 200 response
+    res.status(200).type('text/xml').send('<Response/>');
+});
 
 app.get('/api/orders', (req, res) => {
     res.json(liveOrders);
@@ -145,7 +252,8 @@ app.post('/webhook', async (req, res) => {
 
     // 1. Handle Tool Calls (Client Side Tools / Webhook Tools)
     if (payload.type === 'tool_call' || (payload.tool_calls && payload.tool_calls.length > 0)) {
-        const order = getOrCreateActiveOrder();
+        const callerPhone = payload.phone_number || payload.caller_number || payload.from;
+        const order = getOrCreateActiveOrder(callerPhone);
         order.updatedAt = new Date();
 
         const toolCall = payload.type === 'tool_call' ? payload : payload.tool_calls[0];
@@ -173,7 +281,8 @@ app.post('/webhook', async (req, res) => {
     const agentText = payload.agent_text || payload.agent_response || payload.text;
 
     if (userText || agentText) {
-        const order = getOrCreateActiveOrder();
+        const callerPhone = payload.phone_number || payload.caller_number || payload.from;
+        const order = getOrCreateActiveOrder(callerPhone);
         order.updatedAt = new Date();
 
         // Helper for OpenAI Analysis
@@ -230,7 +339,7 @@ app.post('/webhook', async (req, res) => {
                 - UPSELL RULE: If the agent mentions a PAST order ("Last time you ordered...") or asks "Would you like to order the same?", do NOT return ANY intent (no search, no finalize) for catering or wine. Return EMPTY for those. BUT you MUST STILL return reservation(finalize) if the same message also says "booked arrival" or "confirmed arrival".
                   EXAMPLE: "Confirmed. I have booked your arrival for 4 hours. Last time you ordered a chicken sandwich and red wine. Would you like to order the same again?" => RETURN: [{"type":"reservation","action":"finalize","details":"arrival booked for 4 hours"}] (catering/wine are EXCLUDED because of upsell).
                 - ACTIVE RESERVATION RULE: If the agent says "found your active reservation" or "already have" + food item + "on order" or "Would you like to add more services to this reservation?", return action: "cancel" for reservation AND catering. These are EXISTING services, not new ones.
-                  EXAMPLE: "Welcome! I found your active reservation. Tail PQR123, landing tomorrow at 2:00 PM. I see you already have a chicken sandwich on order." => RETURN: [{"type":"reservation","action":"cancel"},{"type":"catering","action":"cancel"}]
+                  EXAMPLE: "Welcome! I found your active reservation. Tail N874I, landing tomorrow at 2:00 PM. I see you already have a chicken sandwich on order." => RETURN: [{"type":"reservation","action":"cancel"},{"type":"catering","action":"cancel"}]
                 - DECLINE RULE: If the USER says "No", "I don't want", "No thanks", or declines a service, return action: "cancel" for that service type.
                 - Action: "finalize" (only for explicit confirmations of current requests)
                 
@@ -247,9 +356,9 @@ app.post('/webhook', async (req, res) => {
                 const detectedServices = result.services || [];
                 console.log(`OpenAI parsed (${role}): ${JSON.stringify(detectedServices)}`);
 
-                // Check if this is an active reservation pilot (PQR123)
+                // Check if this is an active reservation pilot (N874I)
                 const allMessages = order.transcript.map(t => (t.message || '').toLowerCase()).join(' ');
-                const isActiveReservation = /pqr\s*[-.]?\s*1\s*2\s*3/i.test(allMessages) || allMessages.includes('found your active reservation');
+                const isActiveReservation = /n\s*8\s*7\s*4\s*i/i.test(allMessages) || allMessages.includes('found your active reservation');
 
                 // If active reservation, suppress reservation and catering triggers (they already exist)
                 const filteredServices = isActiveReservation
@@ -328,6 +437,8 @@ app.post('/webhook', async (req, res) => {
                 order.transcript.push({ role: 'pilot', content: cleanUserText, timestamp: new Date() });
                 console.log(`Transcript parsed - Role: pilot, Message: ${cleanUserText}`);
                 broadcastTranscript(order.id, 'pilot', cleanUserText, order.triggeredAgents);
+                // Detect tail number from pilot message
+                detectTailNumber(cleanUserText, order);
                 await analyzeIntent('pilot', cleanUserText);
             }
         }

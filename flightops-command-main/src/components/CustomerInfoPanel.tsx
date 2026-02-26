@@ -31,11 +31,6 @@ export function CustomerInfoPanel({ order }: CustomerInfoPanelProps) {
       </div>
 
       <div className="space-y-4">
-        <div>
-          <label className="text-xs text-muted-foreground uppercase tracking-wide">Name</label>
-          <p className="font-medium text-foreground mt-1">{customer.name || 'Identifying...'}</p>
-        </div>
-
         {customer.phone && (
           <div>
             <label className="text-xs text-muted-foreground uppercase tracking-wide">Phone</label>
@@ -52,31 +47,17 @@ export function CustomerInfoPanel({ order }: CustomerInfoPanelProps) {
         </div>
 
         <div>
-          <label className="text-xs text-muted-foreground uppercase tracking-wide">Aircraft</label>
+          <label className="text-xs text-muted-foreground uppercase tracking-wide">Tail Number</label>
           <div className="flex items-center gap-2 mt-1">
             <Plane className="w-4 h-4 text-muted-foreground" />
-            <span className="font-mono font-medium text-foreground">{customer.planeNumber || 'N/A'}</span>
+            <span className="font-mono font-medium text-foreground">{customer.planeNumber || '—'}</span>
           </div>
         </div>
 
-        <div className="pt-4 border-t border-border">
-          <label className="text-xs text-muted-foreground uppercase tracking-wide">Passengers</label>
-          <div className="flex items-center gap-2 mt-1">
-            <Users className="w-4 h-4 text-muted-foreground" />
-            <span className="text-foreground">{order.passengers || 0} passengers</span>
-          </div>
-        </div>
-
-        {order.arrivalTime && (
+        {(order as any).aircraftType && (
           <div>
-            <label className="text-xs text-muted-foreground uppercase tracking-wide">Arrival Time</label>
-            <div className="flex items-center gap-2 mt-1">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-foreground">{format(new Date(order.arrivalTime), 'MMM d, yyyy')}</span>
-            </div>
-            <p className="text-lg font-semibold text-foreground mt-1">
-              {format(new Date(order.arrivalTime), 'h:mm a')}
-            </p>
+            <label className="text-xs text-muted-foreground uppercase tracking-wide">Aircraft Type</label>
+            <p className="font-medium text-foreground mt-1">{(order as any).aircraftType}</p>
           </div>
         )}
 
