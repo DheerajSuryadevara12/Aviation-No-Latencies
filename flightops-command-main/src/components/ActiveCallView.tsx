@@ -56,7 +56,8 @@ export function ActiveCallView({ order, onBack, onEndCall }: ActiveCallViewProps
 
     // Connect to WebSocket on mount
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:3001');
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
             console.log('ActiveCallView: Connected to Live Transcript Server');

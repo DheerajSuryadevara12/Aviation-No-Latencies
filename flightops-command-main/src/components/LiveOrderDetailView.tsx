@@ -51,7 +51,8 @@ export function LiveOrderDetailView({ order, onBack }: LiveOrderDetailViewProps)
     setLiveMessages([]);
 
     // Connect to WebSocket
-    const ws = new WebSocket('ws://localhost:3001');
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       console.log('Connected to Live Transcript Server');

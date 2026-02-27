@@ -5,8 +5,8 @@ import { OrderColumn } from './OrderColumn';
 import { LiveOrderDetailView } from './LiveOrderDetailView';
 import { IncomingCallPopup } from './IncomingCallPopup';
 
-const API_URL = 'http://localhost:3001/api/orders';
-const WS_URL = 'ws://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/orders';
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
 
 export function Dashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
