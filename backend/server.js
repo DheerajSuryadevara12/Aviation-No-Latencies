@@ -10,7 +10,7 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-const port = 3001;
+const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(bodyParser.json());
