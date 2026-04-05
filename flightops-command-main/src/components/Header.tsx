@@ -35,7 +35,7 @@ export function Header() {
       <div className="flex items-center gap-4">
         <img 
           src="/NforceoneLogo.png" 
-          alt="NforceOne Logo" 
+          alt="NForceOne Logo" 
           className="h-[56px] object-contain" 
         />
         <div>

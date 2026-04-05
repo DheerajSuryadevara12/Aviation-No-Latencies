@@ -13,7 +13,7 @@ export function Footer() {
       {/* Inner bar */}
       <div className="max-w-[1400px] mx-auto px-[30px] py-[14px] flex items-center justify-center">
         <p className="font-['DM_Sans'] text-[12px] text-white tracking-[0.3px]">
-          &copy; 2026 <span className="text-[#e01818] font-[600]">NforceOne</span>. All rights reserved.
+          &copy; 2026 <span className="text-[#e01818] font-[600]">NForceOne</span>. All rights reserved.
         </p>
       </div>
     </footer>
