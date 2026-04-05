@@ -1,70 +1,96 @@
-import { Plane, Bell, Settings, User, Radio } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { Bell, Settings, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function Header() {
+  const [scrolled, setScrolled] = useState(false);
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <header className="nav-header sticky top-0 z-50">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo & Brand - Futuristic */}
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="flex items-center justify-center w-11 h-11 rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-600/10 border border-cyan-400/30 backdrop-blur-sm">
-                <Plane className="w-6 h-6 text-cyan-400" />
-              </div>
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-cyan-400 rounded-full border-2 border-primary animate-pulse shadow-[0_0_8px_hsl(185_70%_50%/0.6)]" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-primary-foreground tracking-wide font-display">
-                SkyOps Command
-              </h1>
-              <p className="text-xs text-cyan-400/80 tracking-widest uppercase font-mono">
-                Aviation Operations
-              </p>
-            </div>
-          </div>
-
-          {/* Status Indicator - Futuristic */}
-          <div className="hidden md:flex items-center gap-3 px-5 py-2.5 rounded-lg bg-white/5 border border-cyan-400/20 backdrop-blur-sm">
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <Radio className="w-4 h-4 text-cyan-400" />
-                <div className="absolute inset-0 animate-ping opacity-50">
-                  <Radio className="w-4 h-4 text-cyan-400" />
-                </div>
-              </div>
-              <span className="text-sm text-primary-foreground/90 font-medium tracking-wide">Live System</span>
-            </div>
-            <div className="w-px h-4 bg-cyan-400/30" />
-            <span className="text-xs text-cyan-400/70 font-mono tabular-nums">
-              {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-            </span>
-          </div>
-
-          {/* Actions - Futuristic */}
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-primary-foreground/70 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-all duration-200"
-            >
-              <Bell className="w-5 h-5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-primary-foreground/70 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-all duration-200"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
-            <div className="ml-3 flex items-center gap-3 pl-4 border-l border-cyan-400/20">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-400/20 to-cyan-600/10 border border-cyan-400/30 flex items-center justify-center">
-                <User className="w-4 h-4 text-cyan-400" />
-              </div>
-              <span className="text-sm text-primary-foreground/80 hidden lg:block font-medium tracking-wide">Operator</span>
-            </div>
-          </div>
+    <header
+      className={cn(
+        "sticky top-0 z-[200] flex items-center justify-between px-6 transition-all duration-300",
+        "h-[80px] border-b-[1.5px] border-[#e01818]",
+        "before:absolute before:inset-x-0 before:top-0 before:h-[2px] before:bg-gradient-to-r before:from-transparent before:via-[#e01818] before:via-[#ff5555] before:via-[#e01818] before:to-transparent",
+        "bg-[#0b0b0d]"
+      )}
+      style={{
+        boxShadow: "0 2px 24px rgba(224,24,24,0.22)",
+      }}
+    >
+      {/* Left: Logo & Heading */}
+      <div className="flex items-center gap-4">
+        <img 
+          src="/NforceoneLogo.png" 
+          alt="NforceOne Logo" 
+          className="h-[56px] object-contain" 
+        />
+        <div>
+          <h1 className="text-xl font-['Outfit'] font-bold text-white tracking-wide leading-none">
+            SkyOps Command
+          </h1>
+          <p className="text-xs text-[rgba(255,255,255,0.45)] uppercase font-['DM_Sans'] font-medium mt-0.5">
+            Aviation Operations
+          </p>
         </div>
+      </div>
+
+      {/* Center: Live Pill */}
+      <div 
+        className="hidden md:flex items-center gap-3 rounded-lg"
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(224,24,24,0.35)",
+          padding: "6px 14px",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-[7px] h-[7px] border-none rounded-full bg-[#e01818] animate-nforceone-pulse" />
+          <span className="text-[12px] font-['DM_Sans'] font-semibold text-[#fff]">
+            Live System
+          </span>
+        </div>
+        <div className="w-px h-[14px] bg-[rgba(224,24,24,0.4)]" />
+        <span className="text-[13px] font-['DM_Mono'] font-medium text-[#ff7070] tabular-nums">
+          {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+        </span>
+      </div>
+
+      {/* Right: Actions */}
+      <div className="flex items-center gap-3">
+        {/* Bell Icon */}
+        <button className="relative flex items-center justify-center w-[34px] h-[34px] rounded-lg transition-all border border-[rgba(255,255,255,0.08)] bg-transparent hover:bg-[rgba(224,24,24,0.15)] hover:border-[rgba(224,24,24,0.5)] group">
+          <div className="absolute -top-1 -right-1 w-[6px] h-[6px] rounded-full bg-[#e01818] shadow-[0_0_5px_#e01818]" />
+          <Bell className="w-4 h-4 text-[rgba(255,255,255,0.4)] group-hover:text-[#ff5555] transition-colors" />
+        </button>
+
+        {/* Settings Icon */}
+        <button className="relative flex items-center justify-center w-[34px] h-[34px] rounded-lg transition-all border border-[rgba(255,255,255,0.08)] bg-transparent hover:bg-[rgba(224,24,24,0.15)] hover:border-[rgba(224,24,24,0.5)] group">
+          <Settings className="w-4 h-4 text-[rgba(255,255,255,0.4)] group-hover:text-[#ff5555] transition-colors" />
+        </button>
+
+        {/* User Button */}
+        <button className="flex items-center gap-2 transition-all rounded-lg border border-[rgba(255,255,255,0.09)] bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(224,24,24,0.12)] hover:border-[rgba(224,24,24,0.5)] px-[12px] pl-[6px] py-[5px]">
+          <div className="flex items-center justify-center w-[27px] h-[27px] rounded-[6px] bg-gradient-to-br from-[#e01818] to-[#8f0000] shadow-[0_0_8px_rgba(224,24,24,0.22)]">
+            <User className="w-3.5 h-3.5 text-white/90" />
+          </div>
+          <span className="text-[13px] font-['DM_Sans'] font-semibold text-[rgba(255,255,255,0.85)] tracking-wide hidden lg:block">
+            Operator
+          </span>
+        </button>
       </div>
     </header>
   );

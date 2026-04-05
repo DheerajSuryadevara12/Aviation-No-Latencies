@@ -7,6 +7,7 @@ interface OrderColumnProps {
   category: OrderCategory;
   orders: Order[];
   onOrderClick: (order: Order) => void;
+  delay?: string;
 }
 
 const categoryConfig = {
@@ -39,49 +40,39 @@ const categoryConfig = {
   },
 };
 
-export function OrderColumn({ category, orders, onOrderClick }: OrderColumnProps) {
+export function OrderColumn({ category, orders, onOrderClick, delay }: OrderColumnProps) {
   const config = categoryConfig[category];
   const Icon = config.icon;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Column Header - Futuristic */}
-      <div className="pb-5 mb-5">
-        <div className="flex items-center gap-3 mb-3">
-          <div className={cn(
-            'flex items-center justify-center w-10 h-10 rounded-lg',
-            config.iconBg
-          )}>
-            <Icon className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h2 className="font-semibold text-lg text-foreground tracking-wide">{config.title}</h2>
-              <span className={cn(
-                'px-2.5 py-0.5 text-xs font-semibold rounded-md font-mono',
-                config.countBg
-              )}>
-                {orders.length}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground tracking-wide">{config.subtitle}</p>
-          </div>
+    <div className={cn("flex flex-col h-full fade-up")} style={{ animationDelay: delay }}>
+      {/* Column Header */}
+      <div className="border-b border-[#e4e6f0] pb-[10px] mb-5">
+        <div className="flex items-center gap-3">
+          <h2 className="font-['DM_Sans'] font-[700] text-[11px] text-[#1a1a24] uppercase tracking-[1.5px]">
+            {config.title}
+          </h2>
+          <span className="font-['DM_Mono'] text-[#1a1a24] border border-[#c8cad8] rounded-[20px] px-[8px] py-[2px] text-xs leading-none">
+            {orders.length}
+          </span>
         </div>
-        {/* Accent line */}
-        <div className={cn(
-          'h-px rounded-full bg-gradient-to-r opacity-80',
-          config.accentColor
-        )} />
       </div>
 
       {/* Orders List */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-1">
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 pb-4 pt-1">
         {orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-3">
-              <Icon className="w-8 h-8 text-muted-foreground/40" />
+          <div className="flex flex-col items-center justify-center p-[48px_20px] bg-[#ffffff] rounded-[13px] border-[1.5px] border-dashed border-[#e4e6f0] gap-[14px] text-center transition-colors duration-200 hover:border-[#e01818] group">
+            <div className="relative flex items-center justify-center w-16 h-16">
+              <div className="absolute inset-0 border-2 border-[#e01818] rounded-full animate-[ring-pulse_1.5s_ease-out_infinite]" />
+              <Icon className="w-8 h-8 text-[#b0b0c4] animate-[float_3s_ease-in-out_infinite]" />
             </div>
-            <p className="text-sm">{config.emptyMessage}</p>
+            <div>
+              <h3 className="font-['Outfit'] font-[700] text-[14px] text-[#141420]">{config.emptyMessage}</h3>
+              <p className="font-['DM_Sans'] text-[12px] text-[#b0b0c4] leading-[1.5] mt-1">Pending fleet assignment.</p>
+            </div>
+            <button className="bg-[rgba(224,24,24,0.07)] border border-[rgba(224,24,24,0.18)] text-[#e01818] font-['DM_Sans'] rounded-[6px] px-[14px] py-[7px] text-[13px] font-[600] hover:bg-[rgba(224,24,24,0.12)] transition-colors mt-2">
+              View Records
+            </button>
           </div>
         ) : (
           orders.map((order) => (

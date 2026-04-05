@@ -135,7 +135,7 @@ export function Dashboard() {
   // Detail view for any order (live or mock)
   if (selectedOrder) {
     return (
-      <div className="container mx-auto px-6 py-6 h-[calc(100vh-80px)]">
+      <div className="container mx-auto px-6 py-6 flex-1">
         <LiveOrderDetailView
           order={selectedOrder}
           onBack={() => setSelectedOrder(null)}
@@ -145,37 +145,39 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-6 py-8">
-        {/* Dashboard Header */}
-        <div className="mb-8">
-          <div className="flex items-end gap-4 mb-2">
-            <h1 className="text-2xl font-bold text-foreground tracking-wide font-display">
-              Operations Dashboard
-            </h1>
-            <div className="h-0.5 w-20 bg-gradient-to-r from-accent to-accent/30 rounded-full mb-2" />
-          </div>
-          <p className="text-muted-foreground text-sm tracking-wide">
+    <div className="min-h-screen">
+      {/* Dashboard Header */}
+      <div className="max-w-[1400px] mx-auto px-[30px] pt-[28px] pb-[28px] flex items-end justify-between fade-up" style={{ animationDelay: '0.05s' }}>
+        <div>
+          <h1 className="text-[26px] font-['Outfit'] font-[800] text-[#1a1a24] leading-none tracking-[-0.5px] relative w-fit after:content-[''] after:block after:w-full after:h-[3px] after:bg-[#e01818] after:mt-3">
+            Operations Dashboard
+          </h1>
+          <p className="text-[13px] font-['DM_Sans'] font-[400] text-[#6a6a80] mt-[5px]">
             Real-time flight operations monitoring & control
           </p>
         </div>
+      </div>
 
+      <div className="container mx-auto px-6 fade-up" style={{ animationDelay: '0.10s' }}>
         {/* Three Column Layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full overflow-hidden">
           <OrderColumn
             category="past"
             orders={mergedPastOrders}
             onOrderClick={setSelectedOrder}
+            delay="0.05s"
           />
           <OrderColumn
             category="active"
             orders={mergedActiveOrders}
             onOrderClick={setSelectedOrder}
+            delay="0.10s"
           />
           <OrderColumn
             category="future"
             orders={mergedScheduledOrders}
             onOrderClick={setSelectedOrder}
+            delay="0.15s"
           />
         </div>
       </div>
